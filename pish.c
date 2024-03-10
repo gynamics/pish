@@ -38,19 +38,27 @@
 #define rl_bind_key(...)
 #define add_history(...)
 
-char *readline (const char *prompt)
-{
+char *readline(const char *prompt) {
   char *buf = NULL;
   size_t bufsz;
   printf("%s", prompt);
 
-  if (getline(&buf, &bufsz, stdin) < 0)
-    {
-      if (buf)
-        free (buf);
+  if (getline(&buf, &bufsz, stdin) < 0) {
+    if (buf)
+      free(buf);
 
-      buf = NULL;
-    }
+    buf = NULL;
+  } else { // strip input line
+    while (strchr (" \t\v\n", *buf))
+      buf++;
+
+    char *end = buf + strlen (buf);
+
+    while (strchr (" \t\v\n", *end))
+      end--;
+
+    end[1] = '\0';
+  }
 
   return buf; // no need to clean up
 }
@@ -859,23 +867,21 @@ int pish_repl(FILE *f, int fds[2]) {
   size_t bufsz = 0;
   char *buf = NULL;
 
-  while (!feof(f))
-    {
-      pish_update_env();
+  while (!feof(f)) {
+    pish_update_env();
 
-      if (getline(&buf, &bufsz, f) < 0)
+    if (getline(&buf, &bufsz, f) < 0)
+      break;
+
+    if (bufsz > 0) {
+      status = pish(buf, fds);
+
+      if (status)
         break;
-
-      if (bufsz > 0)
-        {
-          status = pish(buf, fds);
-
-          if (status)
-            break;
-        }
     }
+  }
 
-  free (buf);
+  free(buf);
   return status;
 }
 
@@ -975,7 +981,6 @@ int pish_ishell(void) {
   }
 }
 
-
 /** handler for SIGINT */
 void sigint_handler(__unused int signum) { pish_sweep(SIGKILL); }
 
@@ -985,10 +990,8 @@ static char **cmd_help =
          "  -h\t\tdisplay this help information.",
          "  -i\t\trun an interactive shell (using GNU readline).",
          "    \t\tpress Ctrl+C to interrupt current command.",
-         "    \t\tpress Ctrl+D to send an EOF to exit shell",
-         "",
-         "run \"help\" in shell to get a list of builtin commands",
-         "");
+         "    \t\tpress Ctrl+D to send an EOF to exit shell", "",
+         "run \"help\" in shell to get a list of builtin commands", "");
 
 int main(int argc, char *argv[]) {
   pish_argc = argc;
