@@ -2,6 +2,10 @@
 
 Pure and Interesting SHell.
 
+Compilation: `gcc -o pish pish.c`
+
+Usage: see `./pish -h`
+
 It provides these bash-like features:
 
 - run commands with arguments.
@@ -18,6 +22,7 @@ It provides these bash-like features:
   - `source` for read commands from a file
   - `exit` for exit program
 - prompt styling
-- (optional) GNU readline shell
+- (optional) GNU readline shell, compile it with option
+  `-DWITH_GNU_READLINE -lreadline`
 
 I wrote this project for practicing linux userspace API.
