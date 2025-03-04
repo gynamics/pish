@@ -49,12 +49,12 @@ char *readline(const char *prompt) {
 
     buf = NULL;
   } else { // strip input line
-    while (strchr (" \t\v\n", *buf))
+    while (strchr(" \t\v\n", *buf))
       buf++;
 
-    char *end = buf + strlen (buf);
+    char *end = buf + strlen(buf);
 
-    while (strchr (" \t\v\n", *end))
+    while (strchr(" \t\v\n", *end))
       end--;
 
     end[1] = '\0';
@@ -75,8 +75,7 @@ char *pish_fifo(const char *cmdline, const char *input);
 
 #define __unused __attribute__((unused))
 #define ARRAY_SIZE(a) sizeof(a) / sizeof((a)[0])
-#define STRV(s, ...)                                                           \
-  (char *[]) { s, ##__VA_ARGS__, 0 }
+#define STRV(s, ...) (char *[]){s, ##__VA_ARGS__, 0}
 
 struct pish_cmd_desc {
   char *cmdstr;
@@ -139,14 +138,6 @@ char *strsub(const char *s, int len) {
   strncpy(ns, s, len);
   ns[len] = '\0';
   return ns;
-}
-
-/** string clone */
-static inline char *strclo(const char *s) {
-  if (!s)
-    return NULL;
-
-  return strsub(s, strlen(s));
 }
 
 /** count occurrence in @s of given character @ch */
@@ -217,13 +208,13 @@ char **sv_fold(const char *s, const char *delimitors) {
 
   int argmax = 2;
   char **argv = malloc(argmax * sizeof(char *));
-  char *buf = strclo(s);
+  char *buf = strdup(s);
   char *tok = strtok(buf, delimitors);
   int i = 0;
 
   /* tokenize */
   while (tok != NULL) {
-    argv[i++] = strclo(tok);
+    argv[i++] = strdup(tok);
     tok = strtok(NULL, delimitors);
 
     if (i + 1 == argmax) /* extend vector */
@@ -597,7 +588,7 @@ char *pish_expand(const char *s) {
         val = sv_unfold((char *[]){v[i], v[i + 1], NULL},
                         (v[i + 1][0] == '(' ? "$" : NULL), "", "");
         free(v[i]);
-        v[i] = strclo("");
+        v[i] = strdup("");
         free(v[i + 1]); // just replace
         v[i + 1] = val;
         continue;
@@ -607,22 +598,22 @@ char *pish_expand(const char *s) {
       if (v[i][0] == '{' && (end = strchr(v[i], '}')))
         key = strsub(&v[i][1], end - &v[i][1]);
       else
-        key = strclo(v[i]);
+        key = strdup(v[i]);
 
       if (*key == '?')
-        val = strclo(pish_status);
+        val = strdup(pish_status);
       else if (isdigit(*key)) {
         int m = c2oct(*key);
         if (m < pish_argc)
-          val = strclo(pish_argv[m]);
+          val = strdup(pish_argv[m]);
       } else
-        val = strclo(getenv(key) ?: "");
+        val = strdup(getenv(key) ?: "");
 
       free(key);
     }
 
     if (!val)
-      val = strclo("");
+      val = strdup("");
 
     /* concat ending part */
     char *es;
@@ -630,7 +621,7 @@ char *pish_expand(const char *s) {
     if (end)
       es = sv_unfold((char *[]){val, end + 1, NULL}, NULL, NULL, NULL);
     else
-      es = strclo(val);
+      es = strdup(val);
 
     free(val);
     /* replace string */
@@ -819,7 +810,7 @@ int pish(const char *cmdline, int fds[2]) {
   if (end)
     cmd = strsub(cmdline, end - cmdline);
   else
-    cmd = strclo(cmdline);
+    cmd = strdup(cmdline);
 
   char *ecmd = pish_expand(cmd);
 
